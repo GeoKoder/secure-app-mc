@@ -195,7 +195,7 @@ router.put("/password", authenticate, async (req, res) => {
     // 3. Verify the current password against its hash
     const isCurrentPasswordValid = await bcrypt.compare(
       currentPassword,
-      user.password,
+      user.passwordHash,
     );
 
     if (!isCurrentPasswordValid) {
@@ -223,7 +223,7 @@ router.put("/password", authenticate, async (req, res) => {
 
     await prisma.user.update({
       where: { id: userId },
-      data: { password: hashedPassword },
+      data: { passwordHash: hashedPassword },
     });
 
     return res.status(200).json({

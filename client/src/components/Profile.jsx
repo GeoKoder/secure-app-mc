@@ -1,7 +1,9 @@
-
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 export default function Profile({ onAccountDeleted }) {
+  const { changePassword, deleteAccount } = useAuth();
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -10,6 +12,7 @@ export default function Profile({ onAccountDeleted }) {
   const [deleteMessage, setDeleteMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Change password
   async function handleChangePassword(e) {
     e.preventDefault();
     setPasswordMessage("");
@@ -22,40 +25,28 @@ export default function Profile({ onAccountDeleted }) {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
+      const data = await changePassword(currentPassword, newPassword);
 
-      const response = await fetch("/api/auth/password", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
-      });
+      setPasswordMessage(data.message || "Password changed successfully.");
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Password change failed");
-      }
-
-      setPasswordMessage(data.message);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (error) {
-      setPasswordMessage(error.message);
+      setPasswordMessage(
+        error.response?.data?.message ||
+          error.message ||
+          "Password change failed.",
+      );
     } finally {
       setLoading(false);
     }
   }
 
+  // Delete account
   async function handleDeleteAccount() {
     const confirmed = window.confirm(
-      "Are you sure you want to permanently delete your account?"
+      "Are you sure you want to permanently delete your account?",
     );
 
     if (!confirmed) return;
@@ -64,29 +55,18 @@ export default function Profile({ onAccountDeleted }) {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
+      await deleteAccount();
 
-      const response = await fetch("/api/auth/account", {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Account deletion failed");
-      }
-
-      // Clear local authentication after successful deletion
-      localStorage.removeItem("token");
-
+      // Optional: navigate away or reset the app's view
       if (onAccountDeleted) {
         onAccountDeleted();
       }
     } catch (error) {
-      setDeleteMessage(error.message);
+      setDeleteMessage(
+        error.response?.data?.message ||
+          error.message ||
+          "Account deletion failed.",
+      );
     } finally {
       setLoading(false);
     }
@@ -100,9 +80,7 @@ export default function Profile({ onAccountDeleted }) {
         <h3>Change Password</h3>
 
         <form onSubmit={handleChangePassword}>
-          <label htmlFor="currentPassword">
-            Current password
-          </label>
+          <label htmlFor="currentPassword">Current password</label>
           <input
             id="currentPassword"
             type="password"
@@ -122,9 +100,7 @@ export default function Profile({ onAccountDeleted }) {
             required
           />
 
-          <label htmlFor="confirmPassword">
-            Confirm new password
-          </label>
+          <label htmlFor="confirmPassword">Confirm new password</label>
           <input
             id="confirmPassword"
             type="password"
@@ -138,30 +114,20 @@ export default function Profile({ onAccountDeleted }) {
             {loading ? "Please wait..." : "Update Password"}
           </button>
 
-          {passwordMessage && (
-            <p role="status">{passwordMessage}</p>
-          )}
+          {passwordMessage && <p role="status">{passwordMessage}</p>}
         </form>
       </section>
 
       <section className="profile-card danger-zone">
         <h3>Delete Account</h3>
-        <p>
-          Permanently delete your account. This action cannot
-          be undone.
-        </p>
 
-        <button
-          type="button"
-          disabled={loading}
-          onClick={handleDeleteAccount}
-        >
-          Delete My Account
+        <p>Permanently delete your account. This action cannot be undone.</p>
+
+        <button type="button" disabled={loading} onClick={handleDeleteAccount}>
+          {loading ? "Please wait..." : "Delete My Account"}
         </button>
 
-        {deleteMessage && (
-          <p role="alert">{deleteMessage}</p>
-        )}
+        {deleteMessage && <p role="alert">{deleteMessage}</p>}
       </section>
     </main>
   );
