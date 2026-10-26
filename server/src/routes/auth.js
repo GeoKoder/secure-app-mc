@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 const authenticate = require("../middleware/auth");
+const { registerSchema } = require("../validators/auth");
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -10,7 +11,7 @@ const prisma = new PrismaClient();
 // Helper: generate JWT token
 function generateToken(user) {
   return jwt.sign(
-    { userId: user.id, email: user.email },
+    { userId: user.id, email: user.email, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: "24h" },
   );
@@ -25,7 +26,9 @@ function isValidEmail(email) {
 // POST /api/auth/register
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const validatedData = registerSchema.parse(req.body);
+
+    const { email, password, name } = validatedData;
 
     // --- Input Validation ---
     if (!email || !password || !name) {
@@ -87,8 +90,16 @@ router.post("/register", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Registration error:", error);
-    res.status(500).json({ error: "Registration failed. Please try again." });
+    if (error.name === "ZodError") {
+      return res.status(400).json({
+        error: "Validation failed",
+        details: error.errors.map((e) => ({
+          field: e.path.join("."),
+          message: e.message,
+        })),
+      });
+    }
+    res.status(500).json({ error: "Registration failed" });
   }
 });
 
