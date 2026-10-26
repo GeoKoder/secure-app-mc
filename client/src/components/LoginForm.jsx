@@ -1,6 +1,7 @@
 // client/src/components/LoginForm.jsx
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import GoogleLoginButton from './GoogleLoginButton';
 
 export default function LoginForm({ onSwitchToRegister }) {
   const { login } = useAuth();
@@ -35,6 +36,13 @@ export default function LoginForm({ onSwitchToRegister }) {
   return (
     <div className="auth-form">
       <h2>Welcome Back</h2>
+
+      <GoogleLoginButton />
+
+      <div className="divider">
+        <span>or</span>
+      </div>
+      
       <form onSubmit={handleSubmit}>
         {error && <div className="error-message">{error}</div>}
 

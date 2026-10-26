@@ -6,7 +6,7 @@ const router = express.Router()
 
 // Redirect to Google's consent screen
 router.get(
-    "router",
+    "/google",
     passport.authenticate("google", {
         scope: ["profile", "email"],
         session: false,

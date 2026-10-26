@@ -1,4 +1,4 @@
-const password = require("passport")
+const passport = require("passport")
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { PrismaClient, Prisma } = require("@prisma/client")
 
@@ -11,7 +11,7 @@ passport.use(
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
             callbackURL: process.env.GOOGLE_CALLBACK_URL,
         },
-        async (accessToken, refreshToken, Profile, done) => {
+        async (accessToken, refreshToken, profile, done) => {
             try {
                 // Check if user already exists with this google ID
                 let user = await prisma.user.findUnique({
@@ -25,7 +25,7 @@ passport.use(
 
                 // Check if a user with this email already exists
                 // (they may have registered with email/password first)
-                const email = Profile.emails[0].value;
+                const email = profile.emails[0].value;
                 user = await prisma.user.findUnique({
                     where: { email },
                 });
@@ -46,7 +46,7 @@ passport.use(
                     data: {
                         email,
                         name: profile.displayName,
-                        googleId: profle.id,
+                        googleId: profile.id,
                         avatar: profile.photos?.[0]?.value,
                         // No passwordHash -- this is an OAuth user
                     },
